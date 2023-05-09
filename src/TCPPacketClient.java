@@ -28,11 +28,11 @@ public class TCPPacketClient {
         System.out.println("Successfully connected to server!");
 
         Scanner in = new Scanner(System.in);
-        DataOutputStream dataOut = null;
         OutputStream serverWriter = null;
+        ObjectOutputStream objectOut = null;
         try {
             serverWriter = socket.getOutputStream();
-            dataOut = new DataOutputStream(serverWriter);
+            objectOut = new ObjectOutputStream(serverWriter);
         }catch (IOException e){
             System.err.println("ERROR: " + e.getMessage());
             e.printStackTrace();
@@ -45,27 +45,20 @@ public class TCPPacketClient {
             String message = in.nextLine();
             packet = new Packet(message, packetNum);
 
-            if (message.equals("CLOSE")) {
-                System.out.println("Stopping server...");
-                try {
-                    dataOut.writeInt(-1);
-                }catch (IOException e){
-                    System.err.println("Server not responding! Error: " + e.getMessage());
-                    e.printStackTrace();
-                    System.exit(0);
-                }
-                System.exit(0);
-                break;
-            }
+
             try {
-                dataOut.writeInt(packet.toBytes().length);
-                serverWriter.write(packet.toBytes());
+                objectOut.writeUnshared(packet);
+                objectOut.reset();
             }catch (IOException e){
                 System.err.println("Server not responding! Error: " + e.getMessage());
                 e.printStackTrace();
                 System.exit(0);
             }
             ++packetNum;
+            if (message.equals("CLOSE")) {
+                System.out.println("Stopping server...");
+                break;
+            }
         }
         try {
             socket.close();

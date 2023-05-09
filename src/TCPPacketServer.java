@@ -1,7 +1,5 @@
 import java.io.*;
-import java.net.ServerSocket;
-import java.net.Socket;
-import java.util.Scanner;
+import java.net.*;
 
 public class TCPPacketServer {
     public static void main(String[] args) {
@@ -28,40 +26,29 @@ public class TCPPacketServer {
 
         OutputStream clientWriter = null;
         InputStream in = null;
-        DataInputStream dataIn = null;
+        ObjectInputStream objectIn = null;
+
         try {
             clientWriter = clientSocket.getOutputStream();
             in = clientSocket.getInputStream();
-            dataIn = new DataInputStream(in);
+            objectIn = new ObjectInputStream(in);
         }catch (Exception e){
             System.err.println("Some problems on client side!");
             e.printStackTrace();
             System.exit(0);
         }
-
+        Packet packet = null;
         while (true) {
-            int size = -1;
+
             try {
-                size = dataIn.readInt();
+                packet = (Packet) objectIn.readObject();
             }catch (IOException e){
                 System.err.println("Client not responding... " + e.getMessage());
                 e.printStackTrace();
                 System.exit(0);
+            } catch (ClassNotFoundException e) {
+                throw new RuntimeException(e);
             }
-            if(size == -1){
-                System.out.println("Server closed!");
-                System.exit(0);
-                break;
-            }
-            byte[] buffer = new byte[size];
-            try {
-                dataIn.read(buffer);
-            }catch (IOException e){
-                System.err.println("Client not responding... " + e.getMessage());
-                e.printStackTrace();
-                System.exit(0);
-            }
-            Packet packet = new Packet(buffer);
 
             System.out.println("Packet No#" + packet.getSerialNo() + ": " + packet.getData().toUpperCase());
             if(packet.getData().equals("CLOSE")){
